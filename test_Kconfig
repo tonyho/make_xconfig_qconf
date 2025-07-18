@@ -1,0 +1,13 @@
+mainmenu "Test Configuration"
+
+config TEST_OPTION
+	bool "Enable test option"
+	default y
+	help
+	  This is a test option for the standalone qconf build.
+
+config TEST_STRING
+	string "Test string value"
+	default "hello world"
+	help
+	  This is a test string configuration option.

@@ -110,8 +110,8 @@ moc -v
 echo.
 
 REM Set compiler flags (with warning suppressions for Windows compatibility)
-set "CFLAGS=-O2 -Wall -Wno-sign-compare -Wno-unused-parameter -Wno-missing-field-initializers -DPACKAGE=\"qconf\" -DLOCALEDIR=\"/usr/share/locale\" -DKBUILD_NO_NLS -D_WIN32 -DUNICODE -D_UNICODE"
-set "CXXFLAGS=-std=c++11 -O2 -Wall -Wno-sign-compare -Wno-unused-parameter -Wno-missing-field-initializers -Wno-deprecated-declarations -DPACKAGE=\"qconf\" -DLOCALEDIR=\"/usr/share/locale\" -DKBUILD_NO_NLS -D_WIN32 -DUNICODE -D_UNICODE"
+set "CFLAGS=-O2 -Wall -Wno-sign-compare -Wno-unused-parameter -Wno-missing-field-initializers -Wno-implicit-fallthrough -DPACKAGE=\"qconf\" -DLOCALEDIR=\"/usr/share/locale\" -DKBUILD_NO_NLS -D_WIN32 -DUNICODE -D_UNICODE"
+set "CXXFLAGS=-std=c++11 -O2 -Wall -Wno-sign-compare -Wno-unused-parameter -Wno-missing-field-initializers -Wno-deprecated-declarations -Wno-implicit-fallthrough -DPACKAGE=\"qconf\" -DLOCALEDIR=\"/usr/share/locale\" -DKBUILD_NO_NLS -D_WIN32 -DUNICODE -D_UNICODE"
 
 REM Add Qt5 include paths
 set "QT_INCLUDES=-I%QT_INCLUDE% -I%QT_INCLUDE%\QtCore -I%QT_INCLUDE%\QtGui -I%QT_INCLUDE%\QtWidgets"

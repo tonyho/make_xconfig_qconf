@@ -11,8 +11,8 @@ CONFIG += c++11
 QMAKE_CXXFLAGS += -std=c++11
 
 # Windows-specific compiler flags to suppress warnings
-QMAKE_CFLAGS += -Wno-sign-compare -Wno-unused-parameter -Wno-missing-field-initializers
-QMAKE_CXXFLAGS += -Wno-sign-compare -Wno-unused-parameter -Wno-missing-field-initializers -Wno-deprecated-declarations
+QMAKE_CFLAGS += -Wno-sign-compare -Wno-unused-parameter -Wno-missing-field-initializers -Wno-implicit-fallthrough -Wno-builtin-declaration-mismatch -Wno-pointer-to-int-cast -Wno-dangling-pointer
+QMAKE_CXXFLAGS += -Wno-sign-compare -Wno-unused-parameter -Wno-missing-field-initializers -Wno-deprecated-declarations -Wno-implicit-fallthrough -Wno-unused-variable
 
 # Defines
 DEFINES += PACKAGE=\\\"qconf\\\"
@@ -21,6 +21,7 @@ DEFINES += KBUILD_NO_NLS
 DEFINES += _WIN32
 DEFINES += UNICODE
 DEFINES += _UNICODE
+DEFINES += QT_MOC_CPP
 
 # Source files
 SOURCES += qconf.cc \

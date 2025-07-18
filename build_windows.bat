@@ -39,7 +39,7 @@ if exist qconf-windows-fixed.pro (
     echo CONFIG += c++11
     echo QMAKE_CFLAGS += -Wno-sign-compare -Wno-unused-parameter
     echo QMAKE_CXXFLAGS += -Wno-sign-compare -Wno-unused-parameter -Wno-deprecated-declarations
-    echo DEFINES += PACKAGE=\\\"qconf\\\" LOCALEDIR=\\\"/usr/share/locale\\\" KBUILD_NO_NLS _WIN32 UNICODE _UNICODE
+    echo DEFINES += PACKAGE=\\\"qconf\\\" LOCALEDIR=\\\"/usr/share/locale\\\" KBUILD_NO_NLS _WIN32 UNICODE _UNICODE QT_MOC_CPP
     echo SOURCES += qconf.cc zconf.tab.c parser_stubs.c
     echo HEADERS += qconf.h lkc.h lkc_proto.h expr.h list.h
     echo INCLUDEPATH += .

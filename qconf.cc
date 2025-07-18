@@ -31,7 +31,10 @@
 #include "lkc.h"
 #include "qconf.h"
 
+/* Include MOC file only for manual builds, not when using qmake */
+#ifndef QT_MOC_CPP
 #include "qconf.moc"
+#endif
 #include "images.c"
 
 #ifdef _
@@ -318,7 +321,7 @@ ConfigList::ConfigList(ConfigView* p, const char *name)
 	  showName(false), showRange(false), showData(false), mode(singleMode), optMode(normalOpt),
 	  rootEntry(0), headerPopup(0)
 {
-	int i;
+	// int i; // Unused variable - commented out
 
 	setObjectName(name);
 	setSortingEnabled(false);

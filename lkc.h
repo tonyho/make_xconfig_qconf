@@ -29,7 +29,9 @@ extern "C" {
 #define PACKAGE "linux"
 #endif
 
+#ifndef LOCALEDIR
 #define LOCALEDIR "/usr/share/locale"
+#endif
 
 #define _(text) gettext(text)
 #define N_(text) (text)

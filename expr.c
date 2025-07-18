@@ -1007,10 +1007,12 @@ static int expr_compare_type(enum expr_type t1, enum expr_type t2)
 	case E_GTH:
 		if (t2 == E_EQUAL || t2 == E_UNEQUAL)
 			return 1;
+		/* fallthrough */
 	case E_EQUAL:
 	case E_UNEQUAL:
 		if (t2 == E_NOT)
 			return 1;
+		/* fallthrough */
 	case E_NOT:
 		if (t2 == E_AND)
 			return 1;

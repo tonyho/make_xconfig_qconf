@@ -7,21 +7,34 @@
 #include <stdlib.h>
 #include <string.h>
 #ifdef _WIN32
-/* Windows doesn't have regex.h, provide minimal compatibility */
+/* Windows doesn't have regex.h, provide compatibility */
 typedef struct {
     int dummy;
 } regex_t;
-typedef int regmatch_t;
+
+typedef struct {
+    int rm_so;  /* start of match */
+    int rm_eo;  /* end of match */
+} regmatch_t;
+
+/* Regex flags */
 #define REG_EXTENDED 0
 #define REG_NOSUB 0
+#define REG_ICASE 1
+
+/* Regex error codes */
+#define REG_NOMATCH 1
+
 static int regcomp(regex_t *preg, const char *pattern, int cflags) {
     (void)preg; (void)pattern; (void)cflags;
-    return -1; /* Always fail on Windows */
+    return -1; /* Always fail on Windows - regex search disabled */
 }
+
 static int regexec(const regex_t *preg, const char *string, size_t nmatch, regmatch_t pmatch[], int eflags) {
     (void)preg; (void)string; (void)nmatch; (void)pmatch; (void)eflags;
-    return -1; /* Always fail on Windows */
+    return REG_NOMATCH; /* Always return no match on Windows */
 }
+
 static void regfree(regex_t *preg) {
     (void)preg;
 }

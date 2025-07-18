@@ -6,8 +6,48 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
+/* Windows doesn't have regex.h, provide minimal compatibility */
+typedef struct {
+    int dummy;
+} regex_t;
+typedef int regmatch_t;
+#define REG_EXTENDED 0
+#define REG_NOSUB 0
+static int regcomp(regex_t *preg, const char *pattern, int cflags) {
+    (void)preg; (void)pattern; (void)cflags;
+    return -1; /* Always fail on Windows */
+}
+static int regexec(const regex_t *preg, const char *string, size_t nmatch, regmatch_t pmatch[], int eflags) {
+    (void)preg; (void)string; (void)nmatch; (void)pmatch; (void)eflags;
+    return -1; /* Always fail on Windows */
+}
+static void regfree(regex_t *preg) {
+    (void)preg;
+}
+#else
 #include <regex.h>
+#endif
+#ifdef _WIN32
+/* Windows doesn't have sys/utsname.h, provide minimal compatibility */
+struct utsname {
+    char sysname[65];
+    char nodename[65];
+    char release[65];
+    char version[65];
+    char machine[65];
+};
+static int uname(struct utsname *buf) {
+    strcpy(buf->sysname, "Windows");
+    strcpy(buf->nodename, "localhost");
+    strcpy(buf->release, "10.0");
+    strcpy(buf->version, "Windows");
+    strcpy(buf->machine, "x86_64");
+    return 0;
+}
+#else
 #include <sys/utsname.h>
+#endif
 
 #include "lkc.h"
 

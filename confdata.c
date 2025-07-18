@@ -13,7 +13,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#ifdef _WIN32
+#include <io.h>
+#include <direct.h>
+#include <process.h>
+#define mkdir(path, mode) _mkdir(path)
+#define getpid() _getpid()
+#else
 #include <unistd.h>
+#endif
 
 #include "lkc.h"
 
@@ -771,14 +779,14 @@ int conf_write(const char *name)
 		basename = conf_get_configname();
 
 	ret = snprintf(newname, sizeof(newname), "%s%s", dirname, basename);
-	if (ret >= sizeof(newname)) {
+	if (ret >= (int)sizeof(newname)) {
 		return 1;
 	}
 
 	env = getenv("KCONFIG_OVERWRITECONFIG");
 	if (!env || !*env) {
 		ret = snprintf(tmpname, sizeof(tmpname), "%s.tmpconfig.%d", dirname, (int)getpid());
-		if (ret >= sizeof(tmpname)) {
+		if (ret >= (int)sizeof(tmpname)) {
 			return 1;
 		}
 		out = fopen(tmpname, "w");

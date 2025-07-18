@@ -4,6 +4,21 @@ project(qconf)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Cross-compilation support
+if(CMAKE_CROSSCOMPILING)
+    message(STATUS "Cross-compiling for ${CMAKE_SYSTEM_NAME}")
+    
+    # Windows-specific settings
+    if(WIN32)
+        set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+        set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+        set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+        
+        # Add Windows-specific definitions
+        add_definitions(-D_WIN32 -DUNICODE -D_UNICODE)
+    endif()
+endif()
+
 # Find Qt5
 find_package(Qt5 REQUIRED COMPONENTS Core Widgets Gui)
 

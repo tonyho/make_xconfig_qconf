@@ -1164,6 +1164,7 @@ void expr_print(struct expr *e, void (*fn)(void *, struct symbol *, const char *
 
 static void expr_print_file_helper(void *data, struct symbol *sym, const char *str)
 {
+	(void)sym; /* Suppress unused parameter warning */
 	xfwrite(str, strlen(str), 1, data);
 }
 
@@ -1193,7 +1194,7 @@ static void expr_print_gstr_helper(void *data, struct symbol *sym, const char *s
 
 		last_line_length = strlen(gs->s) - (last_cr - gs->s);
 
-		if ((last_line_length + extra_length) > gs->max_width)
+		if ((int)(last_line_length + extra_length) > gs->max_width)
 			str_append(gs, "\\\n");
 	}
 

@@ -7,9 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 #ifdef _WIN32
-/* Windows doesn't have regex.h, provide compatibility */
+/* Windows doesn't have regex.h, provide working compatibility using simple pattern matching */
 typedef struct {
-    int dummy;
+    char *pattern;
+    int flags;
 } regex_t;
 
 typedef struct {
@@ -25,18 +26,140 @@ typedef struct {
 /* Regex error codes */
 #define REG_NOMATCH 1
 
+/* Forward declarations for Windows compatibility functions */
+static int strncasecmp_win32(const char *s1, const char *s2, size_t n);
+static int strcasecmp_win32(const char *s1, const char *s2);
+static char *strcasestr_win32(const char *haystack, const char *needle);
+
+/* Simple case-insensitive strncmp - defined first since it's used by strcasestr_win32 */
+static int strncasecmp_win32(const char *s1, const char *s2, size_t n) {
+    while (n > 0 && *s1 && *s2) {
+        char c1 = (*s1 >= 'A' && *s1 <= 'Z') ? *s1 + 32 : *s1;
+        char c2 = (*s2 >= 'A' && *s2 <= 'Z') ? *s2 + 32 : *s2;
+        if (c1 != c2) return c1 - c2;
+        s1++; s2++; n--;
+    }
+    if (n == 0) return 0;
+    return *s1 - *s2;
+}
+
+/* Simple case-insensitive string comparison */
+static int strcasecmp_win32(const char *s1, const char *s2) {
+    while (*s1 && *s2) {
+        char c1 = (*s1 >= 'A' && *s1 <= 'Z') ? *s1 + 32 : *s1;
+        char c2 = (*s2 >= 'A' && *s2 <= 'Z') ? *s2 + 32 : *s2;
+        if (c1 != c2) return c1 - c2;
+        s1++; s2++;
+    }
+    return *s1 - *s2;
+}
+
+/* Simple case-insensitive substring search */
+static char *strcasestr_win32(const char *haystack, const char *needle) {
+    if (!needle || !*needle) return (char*)haystack;
+    
+    size_t needle_len = strlen(needle);
+    while (*haystack) {
+        if (strncasecmp_win32(haystack, needle, needle_len) == 0) {
+            return (char*)haystack;
+        }
+        haystack++;
+    }
+    return NULL;
+}
+
+/* Simple wildcard pattern matching */
+static int simple_match(const char *pattern, const char *string, int case_insensitive) {
+    const char *p = pattern;
+    const char *s = string;
+    
+    while (*p && *s) {
+        if (*p == '*') {
+            /* Skip consecutive asterisks */
+            while (*p == '*') p++;
+            if (!*p) return 1; /* Pattern ends with *, matches everything */
+            
+            /* Try to match the rest of the pattern */
+            while (*s) {
+                if (simple_match(p, s, case_insensitive)) return 1;
+                s++;
+            }
+            return 0;
+        } else if (*p == '?' || *p == '.') {
+            /* Single character wildcard */
+            p++; s++;
+        } else {
+            /* Literal character match */
+            char pc = case_insensitive && (*p >= 'A' && *p <= 'Z') ? *p + 32 : *p;
+            char sc = case_insensitive && (*s >= 'A' && *s <= 'Z') ? *s + 32 : *s;
+            if (pc != sc) return 0;
+            p++; s++;
+        }
+    }
+    
+    /* Skip trailing asterisks in pattern */
+    while (*p == '*') p++;
+    
+    /* Both should be at end for exact match */
+    return !*p && !*s;
+}
+
 static int regcomp(regex_t *preg, const char *pattern, int cflags) {
-    (void)preg; (void)pattern; (void)cflags;
-    return -1; /* Always fail on Windows - regex search disabled */
+    if (!preg || !pattern) return -1;
+    
+    /* Allocate and store pattern */
+    preg->pattern = malloc(strlen(pattern) + 1);
+    if (!preg->pattern) return -1;
+    
+    strcpy(preg->pattern, pattern);
+    preg->flags = cflags;
+    return 0; /* Success */
 }
 
 static int regexec(const regex_t *preg, const char *string, size_t nmatch, regmatch_t pmatch[], int eflags) {
-    (void)preg; (void)string; (void)nmatch; (void)pmatch; (void)eflags;
-    return REG_NOMATCH; /* Always return no match on Windows */
+    (void)eflags; /* Unused parameter */
+    
+    if (!preg || !preg->pattern || !string) return REG_NOMATCH;
+    
+    int case_insensitive = (preg->flags & REG_ICASE) != 0;
+    
+    /* Try simple substring search first */
+    const char *match_pos = NULL;
+    if (case_insensitive) {
+        match_pos = strcasestr_win32(string, preg->pattern);
+    } else {
+        match_pos = strstr(string, preg->pattern);
+    }
+    
+    /* If substring search fails, try simple wildcard matching */
+    if (!match_pos) {
+        if (simple_match(preg->pattern, string, case_insensitive)) {
+            match_pos = string; /* Whole string matches */
+        }
+    }
+    
+    if (match_pos) {
+        /* Fill in match information if requested */
+        if (nmatch > 0 && pmatch) {
+            pmatch[0].rm_so = (int)(match_pos - string);
+            pmatch[0].rm_eo = pmatch[0].rm_so + (int)strlen(preg->pattern);
+            
+            /* Adjust end position for wildcard matches */
+            if (strchr(preg->pattern, '*') || strchr(preg->pattern, '?') || strchr(preg->pattern, '.')) {
+                pmatch[0].rm_eo = (int)strlen(string);
+            }
+        }
+        return 0; /* Match found */
+    }
+    
+    return REG_NOMATCH; /* No match */
 }
 
 static void regfree(regex_t *preg) {
-    (void)preg;
+    if (preg && preg->pattern) {
+        free(preg->pattern);
+        preg->pattern = NULL;
+    }
 }
 #else
 #include <regex.h>

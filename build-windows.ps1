@@ -4,7 +4,9 @@
 param(
     [switch]$Clean,
     [switch]$Verbose,
-    [string]$QtPath = ""
+    [switch]$Static,
+    [string]$QtPath = "",
+    [string]$BuildType = "Release"
 )
 
 Write-Host "========================================" -ForegroundColor Cyan
@@ -102,15 +104,38 @@ Write-Host "Build environment ready!" -ForegroundColor Green
 Write-Host "  Qt5 Directory: $QtPath" -ForegroundColor White
 Write-Host "  Compiler: $(gcc --version | Select-String 'gcc')" -ForegroundColor White
 Write-Host "  MOC: $(moc -v 2>&1 | Select-String 'moc')" -ForegroundColor White
+Write-Host "  Build Type: $BuildType" -ForegroundColor White
+if ($Static) {
+    Write-Host "  Static Linking: ENABLED" -ForegroundColor Yellow
+} else {
+    Write-Host "  Static Linking: disabled" -ForegroundColor White
+}
 Write-Host ""
 
+# Determine which project file to use
+$projectFile = "qconf-windows-fixed.pro"
+if ($Static) {
+    if (Test-Path "qconf-windows-static.pro") {
+        $projectFile = "qconf-windows-static.pro"
+        Write-Host "Using static build configuration: $projectFile" -ForegroundColor Yellow
+    } else {
+        Write-Host "Using dynamic build with static flags: $projectFile" -ForegroundColor Yellow
+    }
+} else {
+    Write-Host "Using dynamic build configuration: $projectFile" -ForegroundColor White
+}
+
 # Build using qmake (recommended method)
-if (Test-Path "qconf-windows.pro") {
+if (Test-Path $projectFile) {
     Write-Host "Building with qmake (recommended)..." -ForegroundColor Yellow
     
     # Generate Makefile
     Write-Host "Generating Makefile..." -ForegroundColor White
-    & qmake qconf-windows.pro
+    if ($Static -and $projectFile -eq "qconf-windows-fixed.pro") {
+        & qmake CONFIG+=static $projectFile
+    } else {
+        & qmake $projectFile
+    }
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Error: qmake failed" -ForegroundColor Red
         exit 1

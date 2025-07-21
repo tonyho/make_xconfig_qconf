@@ -22,6 +22,31 @@ This directory contains all the necessary files to build qconf (Qt-based Kconfig
 
 ## Building
 
+### Static Builds (Recommended for Distribution)
+
+For creating standalone executables with minimal dependencies:
+
+**Windows:**
+```batch
+# Dedicated static build scripts
+build-windows-static.bat
+# or
+.\build-windows-static.ps1
+```
+
+**Linux/Unix:**
+```bash
+# Comprehensive static build (auto-detects best method)
+./build-all-static.sh
+
+# Specific methods
+./build-all-static.sh qmake
+./build-all-static.sh cmake
+./build-all-static.sh manual
+```
+
+📖 **See [Static Build Guide](STATIC_BUILD_GUIDE.md) for detailed instructions**
+
 ### Quick Start - All Platforms
 ```bash
 # Build for all supported platforms and create release packages

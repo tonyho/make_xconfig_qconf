@@ -24,7 +24,7 @@ jobs:
           libpng-dev libsqlite3-dev libssl-dev libx11-xcb-dev libxcb-xinerama0-dev \
           libxcb-xkb-dev libxcb1-dev libxcursor-dev libxi-dev libxml2-dev libxrender-dev \
           libxslt-dev lzip mesa-common-dev nano perl python3 valgrind wget zlib1g-dev \
-          '^libxcb.*-dev' libxkbcommon-dev libxkbcommon-x11-dev libgl-dev
+          '^libxcb.*-dev' libxkbcommon-dev libxkbcommon-x11-dev libgl-dev libdbus-1-dev libglib2.0-dev zip
           
     - name: Download and extract Qt static libraries
       run: |

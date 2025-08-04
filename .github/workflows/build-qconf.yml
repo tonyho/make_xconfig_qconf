@@ -29,7 +29,9 @@ jobs:
           libxcb-xfixes0-dev libxcb-render-util0-dev libxcb-xkb-dev libxcb-icccm4-dev \
           libxcb-image0-dev libxcb-keysyms1-dev libxcb-randr0-dev libxcb-shape0-dev \
           libxcb-sync-dev libxcb-xfixes0-dev libxcb-xinerama0-dev libxcb-dri3-dev \
+          libxcb-xinput-dev libxcb-util-dev libxcb-util0-dev \
           libxkbcommon-dev libxkbcommon-x11-dev libgl-dev libdbus-1-dev libglib2.0-dev \
+          libdrm-dev libicu-dev \
           zip file desktop-file-utils
           
     - name: Download and extract Qt static libraries

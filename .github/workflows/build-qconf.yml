@@ -79,6 +79,9 @@ jobs:
         
     - name: Download AppImage tools
       run: |
+        # Install FUSE for AppImage support
+        apt -y install fuse libfuse2
+        
         # Download linuxdeploy
         wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
         chmod +x linuxdeploy-x86_64.AppImage
@@ -136,15 +139,16 @@ jobs:
         Libraries = lib
         EOF
         
-        # Use linuxdeploy to create AppDir structure
-        ./linuxdeploy-x86_64.AppImage -e qconf-static-bundled --appdir=AppDir -i ./telink2.png -d TelinkQConf.desktop
+        # Use linuxdeploy to create AppDir structure (with extract-and-run to bypass FUSE)
+        ./linuxdeploy-x86_64.AppImage --appimage-extract-and-run -e qconf-static-bundled --appdir=AppDir -i ./telink2.png -d TelinkQConf.desktop
         
         # Copy qt.conf to both locations
         cp qt.conf AppDir/
+        mkdir -p AppDir/usr/bin
         cp qt.conf AppDir/usr/bin/
         
-        # Create AppImage
-        ARCH=x86_64 ./appimagetool-x86_64.AppImage AppDir/ --runtime-file=./runtime-x86_64
+        # Create AppImage (with extract-and-run to bypass FUSE)
+        ARCH=x86_64 ./appimagetool-x86_64.AppImage --appimage-extract-and-run AppDir/ --runtime-file=./runtime-x86_64
         
         # List created files
         ls -la *.AppImage

@@ -132,6 +132,7 @@ jobs:
         # Create fonts directory and copy fonts
         mkdir -p AppDir/usr/bin/lib/fonts
         cd AppDir
+        mkdir lib
         ln -s usr/bin/lib/fonts lib/fonts
         cd ..
         cp dejavu-fonts-ttf-2.37/ttf/DejaVu*.ttf AppDir/lib/fonts/

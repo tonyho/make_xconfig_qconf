@@ -221,7 +221,7 @@ jobs:
         echo "Binary dependencies:"
         ldd ./release/qconf.exe || echo "Checking dependencies failed"
         
-    - name: Deploy with windeployqt
+    - name: Deploy Qt dependencies manually
       shell: msys2 {0}
       run: |
         # Create deployment directory
@@ -230,31 +230,79 @@ jobs:
         # Copy the main executable
         cp ./release/qconf.exe dist/windows-x64/
         
-        # Use windeployqt to collect all Qt dependencies, plugins, and platform files
-        echo "Running windeployqt to collect dependencies..."
-        windeployqt.exe --dir dist/windows-x64 --release --no-translations --no-system-d3d-compiler --no-opengl-sw dist/windows-x64/qconf.exe
+        # Find Qt installation path
+        QT_DIR=$(qmake -query QT_INSTALL_PREFIX)
+        echo "Qt installation directory: $QT_DIR"
         
-        # List what was deployed
-        echo "Deployed files:"
-        find dist/windows-x64 -type f | head -20
-        echo "..."
-        echo "Total files: $(find dist/windows-x64 -type f | wc -l)"
+        # Copy Qt DLLs that the executable depends on
+        echo "Copying Qt libraries..."
+        ldd ./release/qconf.exe | grep -i qt | awk '{print $3}' | while read dll; do
+          if [ -f "$dll" ]; then
+            dll_name=$(basename "$dll")
+            echo "Copying Qt DLL: $dll_name"
+            cp "$dll" dist/windows-x64/
+          fi
+        done
         
-        # Copy additional MSYS2 runtime DLLs that windeployqt might miss
-        echo "Copying additional MSYS2 runtime libraries..."
+        # Copy essential Qt DLLs manually if they exist
+        QT_BIN_DIR="$QT_DIR/bin"
+        for qtlib in Qt5Core Qt5Gui Qt5Widgets; do
+          if [ -f "$QT_BIN_DIR/${qtlib}.dll" ]; then
+            echo "Copying $qtlib.dll"
+            cp "$QT_BIN_DIR/${qtlib}.dll" dist/windows-x64/
+          fi
+        done
         
-        # Get list of DLLs from ldd and copy MSYS2 specific ones
+        # Copy Qt plugins
+        echo "Copying Qt plugins..."
+        QT_PLUGINS_DIR="$QT_DIR/plugins"
+        if [ -d "$QT_PLUGINS_DIR" ]; then
+          # Create plugins directory structure
+          mkdir -p dist/windows-x64/platforms
+          mkdir -p dist/windows-x64/imageformats
+          mkdir -p dist/windows-x64/styles
+          
+          # Copy platform plugins (essential for Qt GUI apps)
+          if [ -d "$QT_PLUGINS_DIR/platforms" ]; then
+            cp "$QT_PLUGINS_DIR/platforms"/*.dll dist/windows-x64/platforms/ 2>/dev/null || echo "No platform plugins found"
+          fi
+          
+          # Copy image format plugins
+          if [ -d "$QT_PLUGINS_DIR/imageformats" ]; then
+            cp "$QT_PLUGINS_DIR/imageformats"/*.dll dist/windows-x64/imageformats/ 2>/dev/null || echo "No imageformat plugins found"
+          fi
+          
+          # Copy style plugins
+          if [ -d "$QT_PLUGINS_DIR/styles" ]; then
+            cp "$QT_PLUGINS_DIR/styles"/*.dll dist/windows-x64/styles/ 2>/dev/null || echo "No style plugins found"
+          fi
+        fi
+        
+        # Copy MSYS2 runtime DLLs
+        echo "Copying MSYS2 runtime libraries..."
         ldd ./release/qconf.exe | grep mingw64 | awk '{print $3}' | while read dll; do
           if [ -f "$dll" ]; then
             dll_name=$(basename "$dll")
             if [ ! -f "dist/windows-x64/$dll_name" ]; then
-              echo "Copying additional DLL: $dll_name"
+              echo "Copying runtime DLL: $dll_name"
               cp "$dll" dist/windows-x64/
             fi
           fi
         done
         
-        # Verify the deployment by checking if essential Qt DLLs are present
+        # Create qt.conf to help Qt find plugins
+        cat > dist/windows-x64/qt.conf << 'EOF'
+        [Paths]
+        Plugins = .
+        EOF
+        
+        # List what was deployed
+        echo "Deployed files:"
+        find dist/windows-x64 -type f | head -30
+        echo "..."
+        echo "Total files: $(find dist/windows-x64 -type f | wc -l)"
+        
+        # Verify the deployment
         echo "Checking for essential Qt libraries:"
         ls -la dist/windows-x64/*.dll | grep -E "(Qt5Core|Qt5Gui|Qt5Widgets)" || echo "Warning: Some Qt DLLs might be missing"
         

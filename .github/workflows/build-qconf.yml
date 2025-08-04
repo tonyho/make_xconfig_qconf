@@ -100,24 +100,25 @@ jobs:
     - name: Create desktop file and icon
       run: |
         # Create desktop file
-        cat > TelinkQConf.desktop << 'EOF'
+        cat > QConf.desktop << 'EOF'
         [Desktop Entry]
         Type=Application
-        Name=Telink QConf
+        Name=QConf
         Comment=Qt-based configuration tool
         Exec=qconf-static-bundled
-        Icon=telink2
+        Icon=icon
         Categories=Development;
         EOF
         
         # Create a simple icon (placeholder - you should provide your own telink2.png)
         # For now, create a simple PNG using ImageMagick if available, or skip
-        if command -v convert >/dev/null 2>&1; then
-          convert -size 64x64 xc:blue telink2.png
-        else
-          # Create a minimal PNG file as placeholder
-          echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" | base64 -d > telink2.png
-        fi
+        #if command -v convert >/dev/null 2>&1; then
+        #  #convert -size 64x64 xc:blue telink2.png
+        #  convert -size 64x64 xc:blue telink2.png
+        #else
+        #  # Create a minimal PNG file as placeholder
+        #  echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" | base64 -d > telink2.png
+        #fi
         
     - name: Create AppImage
       run: |
@@ -140,7 +141,7 @@ jobs:
         EOF
         
         # Use linuxdeploy to create AppDir structure (with extract-and-run to bypass FUSE)
-        ./linuxdeploy-x86_64.AppImage --appimage-extract-and-run -e qconf-static-bundled --appdir=AppDir -i ./telink2.png -d TelinkQConf.desktop
+        ./linuxdeploy-x86_64.AppImage --appimage-extract-and-run -e qconf-static-bundled --appdir=AppDir -i ./icon.png -d QConf.desktop
         
         # Copy qt.conf to both locations
         cp qt.conf AppDir/

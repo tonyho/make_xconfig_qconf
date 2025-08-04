@@ -153,31 +153,13 @@ jobs:
         
         # List created files
         ls -la *.AppImage
-        
-    - name: Package Ubuntu AppImage
-      run: |
-        mkdir -p dist/ubuntu-x64
-        cp *.AppImage dist/ubuntu-x64/qconf-x86_64.AppImage
-        chmod +x dist/ubuntu-x64/qconf-x86_64.AppImage
-        
-        # Create info file
-        echo "qconf - Linux x64 AppImage" > dist/ubuntu-x64/README.txt
-        echo "Built on: $(date)" >> dist/ubuntu-x64/README.txt
-        echo "Qt Version: 5.15.9 (static)" >> dist/ubuntu-x64/README.txt
-        echo "Architecture: x86_64" >> dist/ubuntu-x64/README.txt
-        echo "Ubuntu: 20.04" >> dist/ubuntu-x64/README.txt
-        echo "" >> dist/ubuntu-x64/README.txt
-        echo "Usage: ./qconf-x86_64.AppImage" >> dist/ubuntu-x64/README.txt
-        
-        # Create archive
-        cd dist
-        tar -czf qconf-ubuntu-x64-appimage.tar.gz ubuntu-x64/
+        pwd
         
     - name: Upload Ubuntu AppImage artifact
       uses: actions/upload-artifact@v4
       with:
-        name: qconf-ubuntu-x64-appimage
-        path: dist/qconf-ubuntu-x64-appimage.tar.gz
+        name: Qconf-Linux-x64-appimage
+        path: QConf-x86_64.AppImage
         retention-days: 30
 
   build-windows:

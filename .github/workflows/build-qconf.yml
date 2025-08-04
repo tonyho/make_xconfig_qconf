@@ -30,6 +30,7 @@ jobs:
       run: |
         wget https://github.com/tonyho/Qt_linux_static/releases/download/V1.1/qt5.15.9_static_libs.tar.bz2
         tar -xjf qt5.15.9_static_libs.tar.bz2
+        mv install_static qt5.15.9_static_libs
         ls -la qt5.15.9_static_libs/
         
     - name: Update Qt installation path in .pro file
@@ -119,34 +120,36 @@ jobs:
         qmake -version
         
         # Generate Makefile using Windows .pro file
-        qmake qconf-windows-static.pro
+        #qmake qconf-windows-static.pro
+        qmake qconf-windows-fixed.pro
         
         # Build
         make -j$(nproc)
         
         # Check if binary was created
-        ls -la qconf-static.exe
+        #ls -la qconf-static.exe
+        ls -la release/qconf.exe
         
     - name: Test Windows executable
       shell: msys2 {0}
       run: |
         # Test if the executable runs
-        ./qconf-static.exe --help || echo "Help command failed, but binary exists"
+        ./release/qconf.exe --help || echo "Help command failed, but binary exists"
         
         # Check dependencies
         echo "Binary dependencies:"
-        ldd qconf-static.exe || echo "Checking dependencies failed"
+        ldd ./release/qconf.exe || echo "Checking dependencies failed"
         
     - name: Package Windows build
       shell: msys2 {0}
       run: |
         mkdir -p dist/windows-x64
-        cp qconf-static.exe dist/windows-x64/qconf.exe
+        cp ./release/qconf.exe dist/windows-x64/qconf.exe
         
         # Copy any required DLLs
         # Check what DLLs are needed and copy them
         echo "Checking for required DLLs..."
-        ldd qconf-static.exe | grep mingw64 | awk '{print $3}' | while read dll; do
+        ldd ./release/qconf.exe | grep mingw64 | awk '{print $3}' | while read dll; do
           if [ -f "$dll" ]; then
             echo "Copying $dll"
             cp "$dll" dist/windows-x64/

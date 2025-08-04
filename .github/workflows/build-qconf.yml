@@ -1,0 +1,209 @@
+name: Build qconf
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-ubuntu:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt -y install \
+          build-essential cmake freeglut3-dev gdb git iputils-ping libgl1-mesa-dev \
+          libglu1-mesa-dev libjpeg-dev libmysqlclient-dev libnss3-dev libopus-dev \
+          libpng-dev libsqlite3-dev libssl-dev libx11-xcb-dev libxcb-xinerama0-dev \
+          libxcb-xkb-dev libxcb1-dev libxcursor-dev libxi-dev libxml2-dev libxrender-dev \
+          libxslt-dev lzip mesa-common-dev nano perl python3 valgrind wget zlib1g-dev \
+          '^libxcb.*-dev' libxkbcommon-dev libxkbcommon-x11-dev libgl-dev
+          
+    - name: Download and extract Qt static libraries
+      run: |
+        wget https://github.com/tonyho/Qt_linux_static/releases/download/V1.1/qt5.15.9_static_libs.tar.bz2
+        tar -xjf qt5.15.9_static_libs.tar.bz2
+        ls -la qt5.15.9_static_libs/
+        
+    - name: Update Qt installation path in .pro file
+      run: |
+        # Update the QT_INSTALL_PREFIX path in the .pro file
+        sed -i 's|QT_INSTALL_PREFIX = .*|QT_INSTALL_PREFIX = '"$PWD"'/qt5.15.9_static_libs|g' qconf-static-bundled.pro
+        echo "Updated .pro file:"
+        grep "QT_INSTALL_PREFIX" qconf-static-bundled.pro
+        
+    - name: Build qconf
+      run: |
+        # Set Qt environment
+        export QTDIR="$PWD/qt5.15.9_static_libs"
+        export PATH="$PWD/qt5.15.9_static_libs/bin:$PATH"
+        export LD_LIBRARY_PATH="$PWD/qt5.15.9_static_libs/lib:$LD_LIBRARY_PATH"
+        
+        # Show Qt version
+        echo "Qt version:"
+        "$PWD/qt5.15.9_static_libs/bin/qmake" -version
+        
+        # Generate Makefile
+        "$PWD/qt5.15.9_static_libs/bin/qmake" qconf-static-bundled.pro
+        
+        # Build
+        make -j$(nproc)
+        
+        # Check if binary was created
+        ls -la qconf-static-bundled
+        
+    - name: Test executable
+      run: |
+        # Test if the executable runs
+        ./qconf-static-bundled --help || echo "Help command failed, but binary exists"
+        
+        # Check dependencies
+        echo "Binary dependencies:"
+        ldd qconf-static-bundled || echo "Static binary - no dynamic dependencies"
+        
+    - name: Package Ubuntu build
+      run: |
+        mkdir -p dist/ubuntu-x64
+        cp qconf-static-bundled dist/ubuntu-x64/qconf
+        chmod +x dist/ubuntu-x64/qconf
+        
+        # Create info file
+        echo "qconf - Linux x64 Static Build" > dist/ubuntu-x64/README.txt
+        echo "Built on: $(date)" >> dist/ubuntu-x64/README.txt
+        echo "Qt Version: 5.15.9 (static)" >> dist/ubuntu-x64/README.txt
+        echo "Architecture: x86_64" >> dist/ubuntu-x64/README.txt
+        
+        # Create archive
+        cd dist
+        tar -czf qconf-ubuntu-x64.tar.gz ubuntu-x64/
+        
+    - name: Upload Ubuntu artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: qconf-ubuntu-x64
+        path: dist/qconf-ubuntu-x64.tar.gz
+        retention-days: 30
+
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: >-
+          mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-make
+          mingw-w64-x86_64-qt5-base
+          mingw-w64-x86_64-qt5-tools
+          make
+          
+    - name: Build qconf with MSYS2
+      shell: msys2 {0}
+      run: |
+        # Show Qt version
+        echo "Qt version:"
+        qmake -version
+        
+        # Generate Makefile using Windows .pro file
+        qmake qconf-windows-static.pro
+        
+        # Build
+        make -j$(nproc)
+        
+        # Check if binary was created
+        ls -la qconf-static.exe
+        
+    - name: Test Windows executable
+      shell: msys2 {0}
+      run: |
+        # Test if the executable runs
+        ./qconf-static.exe --help || echo "Help command failed, but binary exists"
+        
+        # Check dependencies
+        echo "Binary dependencies:"
+        ldd qconf-static.exe || echo "Checking dependencies failed"
+        
+    - name: Package Windows build
+      shell: msys2 {0}
+      run: |
+        mkdir -p dist/windows-x64
+        cp qconf-static.exe dist/windows-x64/qconf.exe
+        
+        # Copy any required DLLs
+        # Check what DLLs are needed and copy them
+        echo "Checking for required DLLs..."
+        ldd qconf-static.exe | grep mingw64 | awk '{print $3}' | while read dll; do
+          if [ -f "$dll" ]; then
+            echo "Copying $dll"
+            cp "$dll" dist/windows-x64/
+          fi
+        done
+        
+        # Create info file
+        echo "qconf - Windows x64 Build" > dist/windows-x64/README.txt
+        echo "Built on: $(date)" >> dist/windows-x64/README.txt
+        echo "Qt Version: 5.x (MSYS2)" >> dist/windows-x64/README.txt
+        echo "Architecture: x86_64" >> dist/windows-x64/README.txt
+        echo "Built with: MSYS2/MinGW64" >> dist/windows-x64/README.txt
+        
+        # Create archive
+        cd dist
+        tar -czf qconf-windows-x64.tar.gz windows-x64/
+        
+    - name: Upload Windows artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: qconf-windows-x64
+        path: dist/qconf-windows-x64.tar.gz
+        retention-days: 30
+
+  create-release:
+    needs: [build-ubuntu, build-windows]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      
+    - name: Create release info
+      run: |
+        echo "# qconf Build Artifacts" > RELEASE_NOTES.md
+        echo "" >> RELEASE_NOTES.md
+        echo "Built on: $(date)" >> RELEASE_NOTES.md
+        echo "Commit: ${{ github.sha }}" >> RELEASE_NOTES.md
+        echo "" >> RELEASE_NOTES.md
+        echo "## Included builds:" >> RELEASE_NOTES.md
+        echo "- **Ubuntu x64**: Static build with Qt 5.15.9" >> RELEASE_NOTES.md
+        echo "- **Windows x64**: Build with MSYS2/MinGW64" >> RELEASE_NOTES.md
+        echo "" >> RELEASE_NOTES.md
+        echo "## Usage:" >> RELEASE_NOTES.md
+        echo "Extract the appropriate archive for your platform and run the qconf executable." >> RELEASE_NOTES.md
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: build-${{ github.run_number }}
+        name: qconf Build ${{ github.run_number }}
+        body_path: RELEASE_NOTES.md
+        files: |
+          qconf-ubuntu-x64/qconf-ubuntu-x64.tar.gz
+          qconf-windows-x64/qconf-windows-x64.tar.gz
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

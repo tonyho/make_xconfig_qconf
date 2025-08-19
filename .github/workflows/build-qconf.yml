@@ -11,11 +11,11 @@ jobs:
   build-ubuntu:
     runs-on: ubuntu-latest
     container: ubuntu:20.04
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Install dependencies in Ubuntu 20.04
       run: |
         export DEBIAN_FRONTEND=noninteractive
@@ -33,70 +33,70 @@ jobs:
           libxkbcommon-dev libxkbcommon-x11-dev libgl-dev libdbus-1-dev libglib2.0-dev \
           libdrm-dev libicu-dev \
           zip file desktop-file-utils
-          
+
     - name: Download and extract Qt static libraries
       run: |
         wget https://github.com/tonyho/Qt_linux_static/releases/download/V1.1/qt5.15.9_static_libs.tar.bz2
         tar -xjf qt5.15.9_static_libs.tar.bz2
         mv install_static qt5.15.9_static_libs
         ls -la qt5.15.9_static_libs/
-        
+
     - name: Update Qt installation path in .pro file
       run: |
         # Update the QT_INSTALL_PREFIX path in the .pro file
         sed -i 's|QT_INSTALL_PREFIX = .*|QT_INSTALL_PREFIX = '"$PWD"'/qt5.15.9_static_libs|g' qconf-static-bundled.pro
         echo "Updated .pro file:"
         grep "QT_INSTALL_PREFIX" qconf-static-bundled.pro
-        
+
     - name: Build qconf
       run: |
         # Set Qt environment
         export QTDIR="$PWD/qt5.15.9_static_libs"
         export PATH="$PWD/qt5.15.9_static_libs/bin:$PATH"
         export LD_LIBRARY_PATH="$PWD/qt5.15.9_static_libs/lib:$LD_LIBRARY_PATH"
-        
+
         # Show Qt version
         echo "Qt version:"
         "$PWD/qt5.15.9_static_libs/bin/qmake" -version
-        
+
         # Generate Makefile
         "$PWD/qt5.15.9_static_libs/bin/qmake" qconf-static-bundled.pro
-        
+
         # Build
         make -j$(nproc)
-        
+
         # Check if binary was created
         ls -la qconf-static-bundled
-        
+
     - name: Test executable
       run: |
         # Test if the executable runs
         ./qconf-static-bundled --help || echo "Help command failed, but binary exists"
-        
+
         # Check dependencies
         echo "Binary dependencies:"
         ldd qconf-static-bundled || echo "Static binary - no dynamic dependencies"
-        
+
     - name: Download AppImage tools
       run: |
         # Install FUSE for AppImage support
         apt -y install fuse libfuse2
-        
+
         # Download linuxdeploy
         wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
         chmod +x linuxdeploy-x86_64.AppImage
-        
+
         # Download appimagetool
         wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
         chmod +x appimagetool-x86_64.AppImage
-        
+
         # Download runtime
         wget https://github.com/AppImage/AppImageKit/releases/download/continuous/runtime-x86_64
-        
+
         # Download DejaVu fonts
         wget https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/dejavu-fonts-ttf-2.37.tar.bz2
         tar -xjf dejavu-fonts-ttf-2.37.tar.bz2
-        
+
     - name: Create desktop file and icon
       run: |
         # Create desktop file
@@ -109,7 +109,7 @@ jobs:
         Icon=icon
         Categories=Development;
         EOF
-        
+
         # Create a simple icon (placeholder - you should provide your own telink2.png)
         # For now, create a simple PNG using ImageMagick if available, or skip
         #if command -v convert >/dev/null 2>&1; then
@@ -119,16 +119,16 @@ jobs:
         #  # Create a minimal PNG file as placeholder
         #  echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" | base64 -d > telink2.png
         #fi
-        
+
     - name: Create AppImage
       run: |
         # Clean up any existing AppDir
         rm -rf AppDir/
         mkdir AppDir
-        
+
         # Copy binary
         cp qconf-static-bundled AppDir/
-        
+
         # Create fonts directory and copy fonts
         mkdir -p AppDir/usr/bin/lib/fonts
         #cd AppDir
@@ -139,29 +139,29 @@ jobs:
         #cd ..
         #cp dejavu-fonts-ttf-2.37/ttf/DejaVu*.ttf AppDir/lib/fonts/
         cp dejavu-fonts-ttf-2.37/ttf/DejaVu*.ttf AppDir/usr/bin/lib/fonts/
-        
+
         # Create qt.conf
         cat > qt.conf << 'EOF'
         [Paths]
         Plugins = lib/qt5/plugins
         Libraries = lib
         EOF
-        
+
         # Use linuxdeploy to create AppDir structure (with extract-and-run to bypass FUSE)
         ./linuxdeploy-x86_64.AppImage --appimage-extract-and-run -e qconf-static-bundled --appdir=AppDir -i ./icon.png -d QConf.desktop
-        
+
         # Copy qt.conf to both locations
         cp qt.conf AppDir/
         mkdir -p AppDir/usr/bin
         cp qt.conf AppDir/usr/bin/
-        
+
         # Create AppImage (with extract-and-run to bypass FUSE)
         ARCH=x86_64 ./appimagetool-x86_64.AppImage --appimage-extract-and-run AppDir/ --runtime-file=./runtime-x86_64
-        
+
         # List created files
         ls -la *.AppImage
         pwd
-        
+
     - name: Upload Ubuntu AppImage artifact
       uses: actions/upload-artifact@v4
       with:
@@ -171,11 +171,11 @@ jobs:
 
   build-windows:
     runs-on: windows-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
+
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
       with:
@@ -190,46 +190,46 @@ jobs:
           mingw-w64-x86_64-qt5-winextras
           make
           zip
-          
+
     - name: Build qconf with MSYS2
       shell: msys2 {0}
       run: |
         # Show Qt version
         echo "Qt version:"
         qmake -version
-        
+
         # Generate Makefile using Windows .pro file
         qmake qconf-windows-fixed.pro
-        
+
         # Build
         make -j$(nproc)
-        
+
         # Check if binary was created
         ls -la release/qconf.exe
-        
+
     - name: Test Windows executable
       shell: msys2 {0}
       run: |
         # Test if the executable runs
         ./release/qconf.exe --help || echo "Help command failed, but binary exists"
-        
+
         # Check dependencies
         echo "Binary dependencies:"
         ldd ./release/qconf.exe || echo "Checking dependencies failed"
-        
+
     - name: Deploy Qt dependencies manually
       shell: msys2 {0}
       run: |
         # Create deployment directory
         mkdir -p dist/windows-x64
-        
+
         # Copy the main executable
         cp ./release/qconf.exe dist/windows-x64/
-        
+
         # Find Qt installation path
         QT_DIR=$(qmake -query QT_INSTALL_PREFIX)
         echo "Qt installation directory: $QT_DIR"
-        
+
         # Copy Qt DLLs that the executable depends on
         echo "Copying Qt libraries..."
         ldd ./release/qconf.exe | grep -i qt | awk '{print $3}' | while read dll; do
@@ -239,7 +239,7 @@ jobs:
             cp "$dll" dist/windows-x64/
           fi
         done
-        
+
         # Copy essential Qt DLLs manually if they exist
         QT_BIN_DIR="$QT_DIR/bin"
         for qtlib in Qt5Core Qt5Gui Qt5Widgets; do
@@ -248,32 +248,32 @@ jobs:
             cp "$QT_BIN_DIR/${qtlib}.dll" dist/windows-x64/
           fi
         done
-        
+
         # Copy Qt plugins
         echo "Copying Qt plugins..."
-        QT_PLUGINS_DIR="$QT_DIR/plugins"
+        QT_PLUGINS_DIR="$QT_DIR/share/qt5/plugins"
         if [ -d "$QT_PLUGINS_DIR" ]; then
           # Create plugins directory structure
           mkdir -p dist/windows-x64/platforms
           mkdir -p dist/windows-x64/imageformats
           mkdir -p dist/windows-x64/styles
-          
+
           # Copy platform plugins (essential for Qt GUI apps)
           if [ -d "$QT_PLUGINS_DIR/platforms" ]; then
             cp "$QT_PLUGINS_DIR/platforms"/*.dll dist/windows-x64/platforms/ 2>/dev/null || echo "No platform plugins found"
           fi
-          
+
           # Copy image format plugins
           if [ -d "$QT_PLUGINS_DIR/imageformats" ]; then
             cp "$QT_PLUGINS_DIR/imageformats"/*.dll dist/windows-x64/imageformats/ 2>/dev/null || echo "No imageformat plugins found"
           fi
-          
+
           # Copy style plugins
           if [ -d "$QT_PLUGINS_DIR/styles" ]; then
             cp "$QT_PLUGINS_DIR/styles"/*.dll dist/windows-x64/styles/ 2>/dev/null || echo "No style plugins found"
           fi
         fi
-        
+
         # Copy MSYS2 runtime DLLs
         echo "Copying MSYS2 runtime libraries..."
         ldd ./release/qconf.exe | grep mingw64 | awk '{print $3}' | while read dll; do
@@ -285,23 +285,23 @@ jobs:
             fi
           fi
         done
-        
+
         # Create qt.conf to help Qt find plugins
         cat > dist/windows-x64/qt.conf << 'EOF'
         [Paths]
         Plugins = .
         EOF
-        
+
         # List what was deployed
         echo "Deployed files:"
         find dist/windows-x64 -type f | head -30
         echo "..."
         echo "Total files: $(find dist/windows-x64 -type f | wc -l)"
-        
+
         # Verify the deployment
         echo "Checking for essential Qt libraries:"
         ls -la dist/windows-x64/*.dll | grep -E "(Qt5Core|Qt5Gui|Qt5Widgets)" || echo "Warning: Some Qt DLLs might be missing"
-        
+
         # Check for platforms directory
         if [ -d "dist/windows-x64/platforms" ]; then
           echo "Platform plugins found:"
@@ -309,7 +309,7 @@ jobs:
         else
           echo "Warning: No platform plugins directory found"
         fi
-        
+
     - name: Create Windows package
       shell: msys2 {0}
       run: |
@@ -323,36 +323,35 @@ jobs:
         echo "" >> dist/windows-x64/README.txt
         echo "This package includes all necessary Qt libraries, plugins, and platform files." >> dist/windows-x64/README.txt
         echo "Simply extract and run qconf.exe - no additional Qt installation required." >> dist/windows-x64/README.txt
-        
+
         # Create ZIP archive (more Windows-friendly than tar.gz)
         cd dist
         zip -r qconf-windows-x64-complete.zip windows-x64/
-        
+
         # Also create tar.gz for compatibility
-        tar -czf qconf-windows-x64-complete.tar.gz windows-x64/
-        
+        #tar -czf qconf-windows-x64-complete.tar.gz windows-x64/
+
         # Show archive sizes
         echo "Package sizes:"
         ls -lh qconf-windows-x64-complete.*
-        
+
     - name: Upload Windows complete package
       uses: actions/upload-artifact@v4
       with:
         name: qconf-windows-x64-complete
         path: |
           dist/qconf-windows-x64-complete.zip
-          dist/qconf-windows-x64-complete.tar.gz
         retention-days: 30
 
   create-release:
     needs: [build-ubuntu, build-windows]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-    
+
     steps:
     - name: Download all artifacts
       uses: actions/download-artifact@v4
-      
+
     - name: Create release info
       run: |
         echo "# qconf Build Artifacts" > RELEASE_NOTES.md
@@ -374,7 +373,7 @@ jobs:
         echo "1. Extract qconf-windows-x64-complete.zip or .tar.gz" >> RELEASE_NOTES.md
         echo "2. Run qconf.exe directly - no Qt installation required" >> RELEASE_NOTES.md
         echo "3. All necessary Qt libraries and plugins are included" >> RELEASE_NOTES.md
-        
+
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
@@ -384,7 +383,6 @@ jobs:
         files: |
           qconf-ubuntu-x64-appimage/qconf-ubuntu-x64-appimage.tar.gz
           qconf-windows-x64-complete/qconf-windows-x64-complete.zip
-          qconf-windows-x64-complete/qconf-windows-x64-complete.tar.gz
         draft: false
         prerelease: false
       env:

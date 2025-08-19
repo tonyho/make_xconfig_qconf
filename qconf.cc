@@ -1839,18 +1839,19 @@ static void usage(void)
 static void help(void)
 {
 	printf(_("Usage: %s [OPTION]... <Kconfig file>\n").toLatin1().constData(), progname);
-	printf(_("Qt-based Kconfig configuration tool.\n\n").toLatin1().constData());
+	printf(_("Qt-based Kconfig configuration tool for Windows/Linux/MacOS.\n\n").toLatin1().constData());
 	printf(_("Options:\n").toLatin1().constData());
 	printf(_("  -s           Show only symbols with prompts\n").toLatin1().constData());
 	printf(_("  -h, --help   Display this help and exit\n").toLatin1().constData());
 	printf(_("  -v, --version Output version information and exit\n\n").toLatin1().constData());
-	printf(_("Mostly based on Linux kernel qconf, modified by: 373466062@qq.com\n").toLatin1().constData());
+	printf(_("Based on Linux kernel qconf, modified by: TonyHo 373466062@qq.com\n").toLatin1().constData());
+	printf(_("https://github.com/tonyho/make_xconfig_qconf\n").toLatin1().constData());
 	exit(0);
 }
 
 static void version(void)
 {
-	printf(_("qconf v1.0.0\n").toLatin1().constData());
+	printf(_("v1.0.0\n").toLatin1().constData());
 	exit(0);
 }
 

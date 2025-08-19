@@ -27,6 +27,7 @@
 #include <qevent.h>
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "lkc.h"
 #include "qconf.h"
@@ -1835,6 +1836,24 @@ static void usage(void)
 	exit(0);
 }
 
+static void help(void)
+{
+	printf(_("Usage: %s [OPTION]... <Kconfig file>\n").toLatin1().constData(), progname);
+	printf(_("Qt-based Kconfig configuration tool.\n\n").toLatin1().constData());
+	printf(_("Options:\n").toLatin1().constData());
+	printf(_("  -s           Show only symbols with prompts\n").toLatin1().constData());
+	printf(_("  -h, --help   Display this help and exit\n").toLatin1().constData());
+	printf(_("  -v, --version Output version information and exit\n\n").toLatin1().constData());
+	printf(_("Mostly based on Linux kernel qconf, modified by: 373466062@qq.com\n").toLatin1().constData());
+	exit(0);
+}
+
+static void version(void)
+{
+	printf(_("qconf v1.0.0\n").toLatin1().constData());
+	exit(0);
+}
+
 int main(int ac, char** av)
 {
 	ConfigMainWindow* v;
@@ -1846,19 +1865,25 @@ int main(int ac, char** av)
 	progname = av[0];
 	configApp = new QApplication(ac, av);
 	if (ac > 1 && av[1][0] == '-') {
-		switch (av[1][1]) {
-		case 's':
-			conf_set_message_callback(NULL);
-			break;
-		case 'h':
-		case '?':
-			usage();
+		if (strcmp(av[1], "-h") == 0 || strcmp(av[1], "--help") == 0) {
+			help();
+		} else if (strcmp(av[1], "-v") == 0 || strcmp(av[1], "--version") == 0) {
+			version();
+		} else {
+			switch (av[1][1]) {
+			case 's':
+				conf_set_message_callback(NULL);
+				break;
+			case 'h':
+			case '?':
+				help();
+			}
 		}
 		name = av[2];
 	} else
 		name = av[1];
 	if (!name)
-		usage();
+		help();
 
 	conf_parse(name);
 	fixup_rootmenu(&rootmenu);
